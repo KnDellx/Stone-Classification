@@ -22,7 +22,7 @@
      | Training set   | 0.46020824 | 0.4554496  | 0.45052096 |
      | Validation set | 0.46107383 | 0.45589945 | 0.45033285 |
 
-   - Standard devaitions for each image channel:
+   - Standard deviation values for each image channel:
 
      | Channel        | 1          | 2          | 3          |
      | -------------- | ---------- | ---------- | ---------- |
@@ -31,7 +31,26 @@
 
 3. ### Data Preprocessing
 
-   TODO: 输入ViT 前做的所有处理（resize，normalize，...)
+   Images in both the training and validation sets are preprocessed.  We randomly flipped, rotated, and implemented color jitter on training images, and all of the images are resized to $$224 \times 224$$ and normalized with the mean/standard deviation values from each split:
+   
+   ```python
+   transform_train = transforms.Compose(
+       [transforms.Resize((224, 224)),
+       transforms.RandomHorizontalFlip(p=0.2),  
+       transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  
+       transforms.RandomRotation(15),           
+       transforms.ToTensor(),
+       transforms.Normalize((0.46020824, 0.4554496,  0.45052096), 
+                            (0.28402117, 0.28318824, 0.28876383))]) 
+   
+   transform_test = transforms.Compose(
+       [transforms.Resize((224, 224)),
+       transforms.ToTensor(),
+       transforms.Normalize((0.46107383, 0.45589945, 0.45033285),
+                            (0.28263338, 0.28181302, 0.28723977))])
+   ```
+   
+   
 
 ## II Preliminary Results
 
@@ -41,9 +60,9 @@
 
 2. ### Experimental Set-ups
 
-   | Batch Size | Learning rate | Learning rate scheduler | Optimizer |
-   | ---------- | ------------- | ----------------------- | --------- |
-   |            |               |                         |           |
+   | Batch Size | Learning rate         | Learning rate scheduler | Optimizer |
+   | ---------- | --------------------- | ----------------------- | --------- |
+   | 64         | $$1 \times 10 ^{-5}$$ |                         | Adam      |
 
    TODO: other special settings
 
@@ -53,7 +72,7 @@
 
 ## III Future Plans
 
-xxxxxxx
+To tackle the problem that the 
 
 ## IV Summary
 
