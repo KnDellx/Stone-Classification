@@ -45,10 +45,10 @@ def evaluate_model(model, test_loader, device):
 training progress
 '''
 
-def train_model(model, train_loader, criterion, optimizer, device, epochs=10):
+def train_model(model, train_loader, criterion, optimizer, device, epochs=10, start_epoch = 1, scheduler = None):
     start_time = time.time()
     model.train()
-    for epoch in range(epochs):
+    for epoch in range(start_epoch, epochs):
         running_loss = 0.0
         correct, total = 0, 0
         # set up progress bar to help me debug
@@ -69,10 +69,18 @@ def train_model(model, train_loader, criterion, optimizer, device, epochs=10):
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
+
+        # add learning rate scheduler to help converge
+        if scheduler:
+            scheduler.step()
         Epoch_time = time.time() - start_time 
         print(f"Epoch [{epoch + 1}/{epochs}], Loss: {running_loss / len(train_loader)}, Accuracy: {100 * correct / total:.2f}%")
         print(f'This epoch uses {Epoch_time:.2f} seconds')
-        torch.save(model.state_dict(), f"configs/model_epoch_{epoch+1}.pth")
+        torch.save({
+            'epochs':epoch,
+            'model_state_dict':model.state_dict(),
+            'optimizer_state_dict':optimizer.state_dict()
+        }, f"configs/model_epoch_{epoch+1}.pth")
         torch.cuda.empty_cache()
 
 
@@ -132,21 +140,31 @@ if __name__ == '__main__':
     
     # Loss Function and Optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-5)
-
+    optimizer = optim.Adam(model.parameters(), lr=1e-5) 
+    scheduler = lr_scheduler.StepLR(optimizer, step_size = 5, gamma = 0.1)
 
     '''
     train and evaluate
     '''
-    # try:
-    #     train_model(model, train_loader, criterion, optimizer, device, epochs=20)
-    # except RuntimeError as e:
-    #     torch.cuda.empty_cache()
-    #     torch.cuda.ipc_collect()
-    #     exit()
+    try:
+        # set the resume function
+        resume_path = 'configs/model_epoch_10.pth'
+        if not os.path.exists(resume_path):
+            checkpoint = torch.load(resume_path, map_location = device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            resume_epoch = checkpoint['epochs'] + 1
+        else:
+            model.load_state_dict(torch.load("configs/model_epoch_10.pth",  map_location=device) )
+            resume_epoch = 10
+        train_model(model, train_loader, criterion, optimizer, device, epochs=30, start_epoch = resume_epoch)
+    except RuntimeError as e:
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        exit()
     print('---------------------------------------------')
-    epochs = 9
-    model.load_state_dict(torch.load(f"configs/model_epoch_{epochs}.pth"))
+    epochs = 20
+    model.load_state_dict(torch.load(f"configs/model_epoch_{epochs}.pth")['model_state_dict'])
     model.to(device)
     
     # Evaluate the Model
