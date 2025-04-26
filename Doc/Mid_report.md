@@ -78,9 +78,11 @@
 
 To tackle the problem that we have encountered, we plan to make these attempts in the future:
 
-- (Data)
-- (Model)
-- (Hyperparameter/set-up finetuning)
+- use CosineAnnealing Warmup scheduler which is suitable for ViT
+- add `autocast` and `GradScaler` to help accelerate training
+- add `RandomResizedCrop`, `RandomRotation` to transform to help model be robust
+- resize the training pictures to remove unnecessary parts (use OpenCV to detect the main part of the picture)
+- try different hyperparameters
 
 ## IV Summary
 
