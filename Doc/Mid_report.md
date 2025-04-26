@@ -76,14 +76,20 @@
 
 ## III Future Plans
 
-To tackle the problem that we have encountered, we plan to make these attempts in the future:
+To tackle the problem that we have encountered, we plan to make these attempts in the future (in priority order):
 
-- use CosineAnnealing Warmup scheduler which is suitable for ViT
-- add `autocast` and `GradScaler` to help accelerate training
-- add `RandomResizedCrop`, `RandomRotation` to transform to help model be robust
-- resize the training pictures to remove unnecessary parts (use OpenCV to detect the main part of the picture)
-- try different hyperparameters
+- Use the CosineAnnealing Warmup scheduler, which is suitable for ViT.
+- Add `autocast` and `GradScaler` to help accelerate training.
+- Add `RandomResizedCrop`, `RandomRotation` to transform to help model be robust.
+- Resize the training pictures to remove unnecessary parts (use OpenCV to detect the main part of the picture).
+- Try different hyperparameters (number of training epoch, learning rate, batch size, seed, etc.).
 
 ## IV Summary
 
-xxxxxxx
+Our ViT-B/16 reached 71.55% training and 62.79% accuracy at epoch 20. To boost generalization by ~10–20%, we will adopt a CosineAnnealing Warmup scheduler for cyclic learning rates, enable PyTorch AMP mixed precision with `torch.autocast` and `GradScaler`, integrate RandomResizedCrop and RandomRotation augmentations, perform ROI cropping via OpenCV, plus hyperparameter optimization.
+
+# Reference
+
+Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., & Houlsby, N. (2021). *An image is worth 16×16 words: Transformers for image recognition at scale*. In *International Conference on Learning Representations*. https://openreview.net/forum?id=YicbFdNTTy
+
+Wightman, R. (2019). *PyTorch Image Models (timm)* [Computer software]. GitHub repository. https://github.com/rwightman/pytorch-image-models (doi: 10.5281/zenodo.4414861)
