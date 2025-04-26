@@ -62,17 +62,25 @@
 
    | Batch Size | Learning rate         | Learning rate scheduler | Optimizer |
    | ---------- | --------------------- | ----------------------- | --------- |
-   | 64         | $$1 \times 10 ^{-5}$$ |                         | Adam      |
-
-   TODO: other special settings
+   | 64         | $$1 \times 10 ^{-5}$$ | StepLR, step = 5        | Adam      |
 
 3. ### Result Analysis
 
-   TODO: 训练集表现，测试集表现图（loss/accuracy）及相关分析
+   - **Best accuracy**: **71.55%** for training set, **62.79%** for validation set.
+   
+   - **Loss and accuracy plots**:
+   
+     <img src=".\plot.jpg" alt="plot" style="zoom: 33%;" />
+   
+   Apparently, our model's training loss has reached its convergence at around epoch 20 with such a setting, and the model's fitting capability still needs improving.
 
 ## III Future Plans
 
-To tackle the problem that the 
+To tackle the problem that we have encountered, we plan to make these attempts in the future:
+
+- (Data)
+- (Model)
+- (Hyperparameter/set-up finetuning)
 
 ## IV Summary
 
