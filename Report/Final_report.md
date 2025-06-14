@@ -58,7 +58,15 @@
    Based on these results with a lot of improving spaces, we decided to seek more strategies for processing the training data, thus improving model performance.
 
 ## III Experiment II: operations on datasets
+Before running further experiments, we did a few techinical improvements to  help prevent over-fitting, we present changes as follows:
+* We add a dropout layer: `nn.Dropout(p = 0.6)` before linear layer
+* we also use label smoothing: `nn.CrossEntropyLoss(label_smoothing=0.1)`
+* In the second experiment, we think that model might stuck in local optimum, so we use a different scheduler `CosineAnnealingWarmRestarts`
 
+We present reasons here:
+* Dropout is used to prevent overfitting, ensuring the model does not rely too much on specific features, which is important for robust stone classification with limited or diverse data.
+* Label smoothing helps the model generalize better by reducing overconfidence in predictions, which is useful when stone categories may have ambiguous boundaries.
+* CosineAnnealingWarmRestarts allows the learning rate to periodically restart, helping the model escape local minima and explore better solutions in complex stone image datasets.
 1. ### Central crop
 
    - #### Method
@@ -71,31 +79,53 @@
      |  Without *CenterCrop*    | 75.14%      | 75.14%       | 75.14%       | 75.14%      | 75.14%      |
      | :------------------- | :------ | :------ | :------ | :------ | :------ |
      | *CenterCrop* Size | 200  | 500  | 800  | 1000  | 1500  |
-     |   with *Centercrop*  | 74.91%  | 74.55%  | 75.00%  |
+     |   with *Centercrop*  |  57.95% | 60.41%  | 62.54%  | 63.89% | 65.49%|
 
 2. ### Spectral residual map 
 
    - #### Method
 
-     xxxxxx
+     This approach utilized spectral residual maps to highlight salient (visually outstanding) regions, aiming to draw the model's attention to key areas of the rock and suppress less relevant surroundings. The process involved computing      a saliency map, generating a binary mask, blurring the background, and then combining the original salient regions with the blurred background: $O = M \cdot I + (I - M) \cdot B$.
 
    - #### Results
 
      nnnnnn
 
-## IV Experiment III: Test-Time Adaptation (TTA)
+## IV Experiment III: Test-Time Augmentation (TTA)
 
 1. ### Method
 
-   xxxxxx
+   Instead of modifying the input images through blending or saliency maps, we implemented Test-Time Augmentation (TTA). This involves applying multiple transformations (resizing, horizontal flipping, center cropping, multi-crop like `FiveCrop`, and color jitter) to each test image. The model then predicts each augmented version, and the final prediction is obtained by averaging the softmax probabilities across all augmentations.
 
 2. #### Results
 
-   nnnnnn
+| Method              | Accuracy |
+| :------------------ | :------- |
+| Without TTA (Baseline) | 75.04%   |
+| With TTA            | **75.71%** |
+
+3. ### Results Summary
+TTA provided a modest improvement in accuracy (from 75.04% to 75.71\%). This indicates that aggregating predictions from multiple augmented views does offer some benefit, enhancing the robustness of the final decision. However, the improvement was not substantial. The limitations we identified for this TTA approach include:
+* It primarily relies on simple image transformations, which might not be sufficient to address significant domain shifts or complex variations in real-world test data.
+* TTA still uses a pre-trained model as its base. If the base model already struggles with certain data characteristics, TTA might not be able to fully compensate.
+* The process inherently increases inference time due to multiple forward passes for each test image.
 
 ## V Discussion & Summary
 
+### 3.1 Unresolved Challenges and Possible Reasons
+Despite various optimization efforts, significant challenges remain, primarily stemming from the model's limited adaptability to unseen data variations and the mismatch between low-level visual saliency and high-level semantic features.
 
+### 3.2 Future Exploration Directions
+Future research could explore more advanced Test-Time Adaptation techniques that dynamically adjust model parameters, or investigate ensemble methods combining diverse models.
+
+### 3.3 Main Achievements and Lessons Learned
+The project successfully implemented and evaluated several optimization strategies, highlighting the importance of robust data preprocessing and the potential of TTA, while also demonstrating the complexities of aligning low-level image features with high-level semantic understanding.
+
+### 3.4 Project Innovation and Practical Value
+Our exploration into blending and saliency-based preprocessing offers insights into attention mechanisms, while the application of TTA enhances the model's practical utility for real-world geological image analysis.
+
+### 3.5 Potential in Future Research and Applications
+Data science projects like this hold immense potential for automating geological surveys, enhancing mineral exploration, and aiding educational tools by providing rapid and accurate rock classification capabilities.
 
 # Reference
 
