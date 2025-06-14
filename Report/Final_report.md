@@ -63,11 +63,15 @@
 
    - #### Method
 
-     xxxxxx
+     Our initial attempt to make the model focus on the central area involved applying `CenterCrop` transform *only* to the validation set during evaluation, while the training process remained unchanged.
+
 
    - #### Results
 
-     nnnnnn
+     |  Without *CenterCrop*    | 75.14%      | 75.14%       | 75.14%       | 75.14%      | 75.14%      |
+     | :------------------- | :------ | :------ | :------ | :------ | :------ |
+     | *CenterCrop* Size | 200  | 500  | 800  | 1000  | 1500  |
+     |   with *Centercrop*  | 74.91%  | 74.55%  | 75.00%  |
 
 2. ### Spectral residual map 
 
