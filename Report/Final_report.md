@@ -122,6 +122,16 @@ We present reasons here:
         $$O = M \cdot I + (I - M) \cdot B$$
 
    - #### Results
+      <div style="display: flex;">
+        <div style="flex: 1; padding: 10px;">
+          ![Alt text for Image 1](image1.jpg)
+          <p style="text-align: center;">Caption for Image 1</p>
+        </div>
+        <div style="flex: 1; padding: 10px;">
+          ![Alt text for Image 2](image2.png)
+          <p style="text-align: center;">Caption for Image 2</p>
+        </div>
+      </div>
 
      |  Epoch    | 10     | 20       | 21      | 28     | 29      |  30  |
      | :------------------- | :------ | :------ | :------ | :------ | :------ |:------ |
