@@ -123,7 +123,10 @@ We present reasons here:
 
    - #### Results
 
-     nnnnnn
+     |  Epoch    | 10     | 20       | 21      | 28     | 29      |  30  |
+     | :------------------- | :------ | :------ | :------ | :------ | :------ |:------ |
+     | Training Accuracy | 78.60%  | 80.79%  | 81.94%  | 79.61% | 81.73% | 83.44%  |
+     |  Evaluation Accuracy |  72.62% | 72.59%  | 73.19%  | 71.93% | 72.69%| 73.58%|
 
 ## IV Experiment III: Test-Time Augmentation (TTA)
 
