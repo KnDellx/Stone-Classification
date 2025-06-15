@@ -18,8 +18,9 @@
         nn.Dropout(p = 0.6),
         nn.Linear(num_features, num_classes)
     )
-    ```
-    没有被注释掉
+```
+  没有被注释掉
+  
 4. For certain kind of transform, you need to navigate to the `transfrom_train` part and uncomment the corresponding transform while comment another kind of transform.
 
 **断点续训步骤：**
