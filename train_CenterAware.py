@@ -39,23 +39,7 @@ logging.basicConfig(
     format = '%(asctime)s - %(levelname)s - %(message)s',
     level = logging.INFO
 )
-class SaliencyBGBlur:
-    """用光谱残差显著图对背景进行模糊处理"""
-    def __init__(self, thr=0.5, blur_size=(21,21), mask_blur=(5,5)):
-        self.sal = cv2.saliency.StaticSaliencySpectralResidual_create()
-        self.thr = thr
-        self.blur_size = blur_size
-        self.mask_blur = mask_blur
 
-    def __call__(self, img: Image.Image) -> Image.Image:
-        im = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-        _, sal_map = self.sal.computeSaliency(im)
-        mask = (sal_map > self.thr).astype(np.uint8)
-        mask = cv2.blur(mask, self.mask_blur)
-        bg = cv2.GaussianBlur(im, self.blur_size, 0)
-        out = np.where(mask[..., None] == 1, im, bg)
-        out = cv2.cvtColor(out, cv2.COLOR_BGR2RGB)
-        return Image.fromarray(out)
 class CenterAwareOnly(torch.nn.Module):
     """
     Applies a center-aware overlay by blending a globally resized view
@@ -148,7 +132,7 @@ def train_model(model, train_loader, criterion, optimizer, device, epochs=10, st
         # if scheduler:
         #     save_checkpoint['scheduler_state_dict'] = scheduler.state_dict() # 保存 scheduler 状态
         
-        torch.save(save_checkpoint, f"configs/model_epoch_{epoch+1}.pth") # epoch+1 是为了文件名可读性
+        torch.save(save_checkpoint, f"configs/model_epoch_CenterCrop_{epoch+1}.pth") # epoch+1 是为了文件名可读性
         torch.cuda.empty_cache()
 
 
@@ -173,12 +157,11 @@ if __name__ == '__main__':
     # Define Transformations for the dataset
     print("Processing data...")
     transform_train = transforms.Compose([
-    # CenterAwareOnly(
-    #     centercrop_size = 500,
-    #     output_size = 1000,
-    #     alpha = 0.5
-    # ),
-    SaliencyBGBlur(thr=0.3),     # 显著性背景模糊
+    CenterAwareOnly(
+        centercrop_size = 500,
+        output_size = 1000,
+        alpha = 0.5
+    ),
     transforms.Resize((224, 224)),
     transforms.RandomHorizontalFlip(p=0.2),  # 50% 概率水平翻转
     transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # 颜色抖动
@@ -188,12 +171,11 @@ if __name__ == '__main__':
     ]) 
 
     transform_test = transforms.Compose([
-    #     CenterAwareOnly(
-    #     centercrop_size = 500,
-    #     output_size = 1000,
-    #     alpha = 0.5
-    # ),
-        SaliencyBGBlur(thr=0.3),     # 显著性背景模糊
+        CenterAwareOnly(
+        centercrop_size = 500,
+        output_size = 1000,
+        alpha = 0.5
+    ),
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize((0.46020824, 0.4554496,  0.45052096), (0.28402117, 0.28318824, 0.28876383))
@@ -231,21 +213,19 @@ if __name__ == '__main__':
     # Loss Function and Optimizer
     criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4) 
-    # total_epochs_for_annealing = 10 # 与您 train_model 中的 epochs 参数一致
-    # scheduler = lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=total_epochs_for_annealing, eta_min=1e-6) # eta_min 是可选的，默认为0
-    scheduler = lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=1, eta_min=1e-6)
+    total_epochs_for_annealing = 10 # 与您 train_model 中的 epochs 参数一致
+    scheduler = lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=total_epochs_for_annealing, eta_min=1e-6) # eta_min 是可选的，默认为0
     '''
     train and evaluate
     '''
     try:
         # set the resume function
         print("Loading model...")
-        resume_path = 'configs/model_epoch_11.pth'
+        resume_path = 'configs/model_epoch_90.pth'
         if os.path.exists(resume_path):
             checkpoint = torch.load(resume_path, map_location = device)
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            # scheduler_new = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=1, eta_min=1e-6)
             if 'scheduler_state_dict' in checkpoint and scheduler is not None:
                 scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
                 print("Scheduler state loaded.")
@@ -253,7 +233,7 @@ if __name__ == '__main__':
         else:
             pass
         print("Training...")
-        train_model(model, train_loader, criterion, optimizer, device, epochs=30, start_epoch = resume_epoch, scheduler=scheduler)
+        train_model(model, train_loader, criterion, optimizer, device, epochs=10, start_epoch = 0, scheduler=scheduler)
     except RuntimeError as e:
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
