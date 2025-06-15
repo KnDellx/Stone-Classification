@@ -122,8 +122,8 @@ We present reasons here:
         $$O = M \cdot I + (I - M) \cdot B$$
 
    - #### Results
+      <img src=".\trainaccuracy.png" alt="1" style="zoom:33%;" />
       <img src=".\image.png" alt="1" style="zoom:33%;" />
-      
         
 
      |  Epoch    | 10     | 20       | 21      | 28     | 29      |  30  |
