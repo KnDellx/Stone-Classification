@@ -67,25 +67,59 @@ We present reasons here:
 * Dropout is used to prevent overfitting, ensuring the model does not rely too much on specific features, which is important for robust stone classification with limited or diverse data.
 * Label smoothing helps the model generalize better by reducing overconfidence in predictions, which is useful when stone categories may have ambiguous boundaries.
 * CosineAnnealingWarmRestarts allows the learning rate to periodically restart, helping the model escape local minima and explore better solutions in complex stone image datasets.
-1. ### Central crop
+1. ### Blending Central Area 
 
-   - #### Method
+   - #### First Method
+      Our initial attempt to make the model focus on the central area involved applying `CenterAwareOnly` transform *only* to the validation set during evaluation, while the training             process remained unchanged. The details of implementation of  `CenterAwareOnly` transform is given in Appendix.
 
-     Our initial attempt to make the model focus on the central area involved applying `CenterCrop` transform *only* to the validation set during evaluation, while the training process remained unchanged.
 
+   - #### Results&Analysis
 
-   - #### Results
-
-     |  Without *CenterCrop*    | 75.14%      | 75.14%       | 75.14%       | 75.14%      | 75.14%      |
+     |  Without *CenterAwareOnly*    | 75.14%      | 75.14%       | 75.14%       | 75.14%      | 75.14%      |
      | :------------------- | :------ | :------ | :------ | :------ | :------ |
-     | *CenterCrop* Size | 200  | 500  | 800  | 1000  | 1500  |
-     |   with *Centercrop*  |  57.95% | 60.41%  | 62.54%  | 63.89% | 65.49%|
+     | *CenterAwareOnly* Size | 200  | 500  | 800  | 1000  | 1500  |
+     |   with *CenterAwareOnly*  |  57.95% | 60.41%  | 62.54%  | 63.89% | 65.49%|
+     
+     It's obvious that model doesn't pay attention to central area or in another way it doesn't know how to pay attention to that specific area.
+     We try another advanced areas from a paper.
+
+   - #### Second Method
+     Recognizing the limitation of applying CenterCrop only at evaluation, we designed a transform class to explicitly blend the central area with the original picture. The operation is         defined as O=(1−α)⋅R(I)+α⋅R(C(I)), where I is the original image, C(⋅) is center cropping, R(⋅) is global scaling, and α is an integration coefficient. The idea was to emphasize the          central region by overlaying a scaled version of its cropped part.
+   - #### Results & Analysis:
+     This method did not yield the desired improvement. Its limitation likely stemmed from the simplistic nature of the blending, which might not effectively highlight semantically              relevant features or could introduce artificial artifacts.
 
 2. ### Spectral residual map 
 
    - #### Method
 
-     This approach utilized spectral residual maps to highlight salient (visually outstanding) regions, aiming to draw the model's attention to key areas of the rock and suppress less relevant surroundings. The process involved computing      a saliency map, generating a binary mask, blurring the background, and then combining the original salient regions with the blurred background: $O = M \cdot I + (I - M) \cdot B$.
+        This approach utilized spectral residual maps to highlight salient (visually outstanding) regions, aiming to draw the model's attention to key areas of the rock and suppress less           relevant surroundings. The process involved computing a saliency map, generating a binary mask, blurring the background, and then combining the original salient regions with the            blurred background.
+   
+        The core of the spectral residual method lies in analyzing the image in the **frequency domain**. For an input image $I(x, y)$ in the spatial domain (where $x, y$ are pixel                 coordinates), its Fourier Transform is given by $F(f_x, f_y) = \mathcal{F}\{I(x, y)\}$. We then decompose its spectrum into amplitude and phase components:
+         
+        $$A(f_x, f_y) = |F(f_x, f_y)|$$
+        $$\phi(f_x, f_y) = \text{angle}(F(f_x, f_y))$$
+      
+        The method then focuses on the **log-amplitude spectrum**, denoted as $L(f_x, f_y) = \log(A(f_x, f_y))$. This step converts multiplicative components into additive ones,                    simplifying analysis.
+      
+        To identify the unusual or "residual" parts, the average (or smoothed) log-amplitude spectrum, $\bar{L}(f_x, f_y)$, is computed by convolving $L(f_x, f_y)$ with a low-pass filter           (e.g., a Gaussian filter) $h$:
+      
+        $$\bar{L}(f_x, f_y) = L(f_x, f_y) * h$$
+      
+        The **spectral residual**, $R(f_x, f_y)$, is then derived by subtracting this average from the original log-amplitude spectrum:
+      
+        $$R(f_x, f_y) = L(f_x, f_y) - \bar{L}(f_x, f_y)$$
+      
+        This residual represents the "surprising" or non-redundant information in the frequency domain – components that stand out from the typical spectral patterns.
+      
+        Finally, the saliency map $S(x, y)$ in the spatial domain is obtained by combining the spectral residual with the original phase information and performing an Inverse Fourier               Transform:
+      
+        $$S(x, y) = \mathcal{F}^{-1}\{\exp(R(f_x, f_y) + i \phi(f_x, f_y))\}$$
+      
+        (Here, $\mathcal{F}^{-1}$ denotes the Inverse Fourier Transform). This $S(x, y)$ highlights the visually salient regions by emphasizing frequencies that were considered "residual."
+      
+        Following the computation of the saliency map $S$, a **binary mask** $M$ is generated by thresholding and blurring $S$ (e.g., $M = \text{Blur}(S > \text{threshold})$). A **blurred          background** $B$ is also created by applying a Gaussian blur to the original image $I$. The final output image $O$ then blends the original image's salient regions (where $M=1$)            with the blurred background (where $M=0$), aiming to emphasize the foreground while suppressing distractions:
+      
+        $$O = M \cdot I + (I - M) \cdot B$$
 
    - #### Results
 
@@ -132,3 +166,9 @@ Data science projects like this hold immense potential for automating geological
 Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., & Houlsby, N. (2021). *An image is worth 16×16 words: Transformers for image recognition at scale*. In *International Conference on Learning Representations*. https://openreview.net/forum?id=YicbFdNTTy
 
 Wightman, R. (2019). *PyTorch Image Models (timm)* [Computer software]. GitHub repository. https://github.com/rwightman/pytorch-image-models (doi: 10.5281/zenodo.4414861)
+
+X. Hou and L. Zhang, "Saliency Detection: A Spectral Residual Approach," 2007 IEEE Conference on Computer Vision and Pattern Recognition, Minneapolis, MN, USA, 2007, pp. 1-8, doi: 10.1109/CVPR.2007.383267. keywords: {Object detection;Computational modeling;Humans;Visual system;Image analysis;Object recognition;Machine vision;Redundancy;Image coding;Statistical distributions},
+
+
+
+
